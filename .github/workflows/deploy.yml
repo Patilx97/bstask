@@ -1,0 +1,36 @@
+name: WordPress Deployment to VPS
+
+on:
+  push:
+    branches:
+      - master  # Trigger on push to the main branch
+  
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH for deployment
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y rsync
+
+      - name: Deploy to VPS
+        run: |
+          rsync -avz --delete --exclude '.git*' ./ ubuntu@${{ secrets.VPS_IP }}:/var/www/html/wordpress/
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
+
+      - name: Clear cache on VPS (Optional)
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.VPS_IP }} 'sudo systemctl restart nginx php8.3-fpm'
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
