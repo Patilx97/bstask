@@ -3,7 +3,7 @@ name: WordPress Deployment to VPS
 on:
   push:
     branches:
-      - master  # Trigger on push to the main branch
+      - master  # Trigger on push to the master branch
   
 jobs:
   deploy:
@@ -14,10 +14,14 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up SSH for deployment
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
+
       - name: Install Dependencies
         run: |
           sudo apt update
