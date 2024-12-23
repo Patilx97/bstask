@@ -29,7 +29,14 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          rsync -avz --delete --exclude '.git*' --exclude 'wp-admin' ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:/var/www/html/wp-live/
+          rsync -avz --delete \
+            --exclude '.git*' \                 # Exclude git-related files and directories
+            --exclude 'wp-admin' \             # Exclude wp-admin directory
+            --exclude 'wp-config.php' \        # Exclude configuration file (if managed separately)
+            --exclude 'readme.html' \          # Exclude WordPress default readme file
+            --exclude 'license.txt' \          # Exclude license file
+            --exclude 'xmlrpc.php' \           # Exclude XML-RPC endpoint
+           ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:/var/www/html/wp-live/
         env:
           VPS_IP: ${{ secrets.VPS_IP }}
 
