@@ -29,12 +29,12 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          rsync -avz --delete --exclude '.git*' ./ ubuntu@${{ secrets.VPS_IP }}:/var/www/html/wordpress/
+          rsync -avz --delete --exclude '.git*' ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:/var/www/html/wp-deployment/
         env:
           VPS_IP: ${{ secrets.VPS_IP }}
 
       - name: Clear cache on VPS (Optional)
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.VPS_IP }} 'sudo systemctl restart nginx php8.3-fpm'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} 'sudo systemctl restart nginx php8.3-fpm'
         env:
           VPS_IP: ${{ secrets.VPS_IP }}
