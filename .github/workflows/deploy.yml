@@ -1,0 +1,46 @@
+name: WordPress Deployment to VPS
+
+on:
+  push:
+    branches:
+      - master  # Trigger on push to the master branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH for deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y rsync git
+
+      - name: Clone repository on VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} "git -C /var/www/html/wp-live fetch origin && git -C /var/www/html/wp-live reset --hard origin/master"
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
+
+      - name: Deploy updated files to VPS
+        run: |
+          rsync -avz --delete --exclude '.git*' --exclude 'wp-admin' --exclude 'wp-config.php' --exclude 'readme.html' --exclude 'license.txt' --exclude 'xmlrpc.php' ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:/var/www/html/wp-live/
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
+
+      - name: Clear cache on VPS (Optional)
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} 'sudo systemctl restart nginx php8.3-fpm'
+        env:
+          VPS_IP: ${{ secrets.VPS_IP }}
